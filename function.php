@@ -784,15 +784,6 @@ function readURL($url)
     curl_close($ch);
     return curl_error($ch);
 }
-function RandomString($length = 10) {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $charactersLength = strlen($characters);
-    $randomString = '';
-    for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, $charactersLength - 1)];
-    }
-    return $randomString;
-}
 function curl_download($Url,$fields = false){
     if (!function_exists('curl_init')){
         return 'Sorry cURL is not installed!';
@@ -823,28 +814,6 @@ function curl_download($Url,$fields = false){
 function Json($url="", $t=true,$f=false)
 {
     return json_decode(curl_download($url,$f),$t);
-}
-function sendMsgToBot($messenger_id,$get_post=false){
-if(!$get_post)
-global $get_post;
-$url = "https://api.chatfuel.com/bots/5831bfcee4b05493fe64152e/users/".$messenger_id ."/send?chatfuel_token=7qbPnN1r5APDniFsvBFgQUpNwzREJPdBGRREY8lvMZccANUKPQwQsDlfqwaD9KrT&chatfuel_block_name=".(strpos($get_post,"_")?"API":$get_post);
-//echo curl_download($url,array("get_post"=>$get_post));
-//$data = array("get_post" =>$get_post );
-$data_string = json_encode(array("get_post" =>$get_post));
-
-$ch = curl_init($url);
-
-curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
-
-curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-$result = curl_exec($ch);
-
-curl_close($ch);
-return json_decode($result,true);
-//echo "$result";
 }
 function  Ctokn($access){
 $e = Json("https://graph.facebook.com/me/permissions?access_token="  . $access)['error']['message'];
@@ -908,6 +877,36 @@ function getInfo($access)
     }
     return array("error"=>$error,"msg"=>$msg,"info"=>$array,"token"=>$access);
 }
+function getPost(){
+ return Sel("posts","where id=".isv("vid"));
+}
+function getCat(){
+if(isv("app") == "user"){
+  $object = json_decode(json_encode((object) array("title"=>"العضو ".isv("id"))), FALSE);
+ //return Sel("users","where username=".isv("id"));
+ return $object;
+}
+ return Sel("categories","where id=".isv("id"));
+
+}
+function isView($pid=false){
+$cantry=visitor_country();
+$browser = get_browser_name();
+if(!$pid)
+$pid = isv("vid");
+Cinst("vistors",array("pid"=>$pid,"ip"=>ip(),"cantry"=>$cantry,"device"=>getOS(),"browser"=>$browser,"date"=>time()),"where  ip='".ip()."' and   pid=".$pid);
+UpDate("posts","views",Num("vistors","where pid=".$pid),"where id=".$pid);
+}
+function Coky($sion){
+     if (isset($_COOKIE[$sion])) {
+        return $_COOKIE[$sion];
+    } else {
+        return false;
+    }
+}
+function iCoky($cookie_name,$cookie_value,$time=60){
+ setcookie($cookie_name, $cookie_value, time() + ($time * 60));
+}
 function Sion($sion)
 {
     if (isset($_SESSION[$sion])) {
@@ -943,7 +942,7 @@ function SQ($sq)
   }
 function Ser($html)
 {
-    return addslashes(htmlspecialchars(mysqli_real_escape_string(strip_tags($html))));
+    return addslashes(htmlspecialchars(strip_tags($html)));
 }
 function De($html)
 {
@@ -951,13 +950,31 @@ function De($html)
 }
 function Cstr($str="", $md=false)
 {
+    $str = Rstr(Rstr(Rstr(Rstr(Rstr(Rstr(Rstr(De($str)), '"', ''), "'", ''), '--', ''), '//', ''), '-', '')," ","");
     if ($md) {
-        return md5(Rstr(Rstr(Rstr(Rstr(Rstr(Rstr(Rstr(Rstr(Rstr(Ser(De($str))), '"', ''), "'", ''), '--', ''), 'or', ''), 'OR', ''), 'Or', ''), '//', ''), 'oR', ''));
+        return md5($str);
     } else {
-        return Rstr(Rstr(Rstr(Rstr(Rstr(Ser($str)), '--', ''), 'or', ''), 'OR', ''), 'Or', '');
+        return $str;
+
     }
 }
-
+function getLogo($us=false){
+global $user;
+//$us =  getUse($user);
+if(!$us)
+$us = $user;
+if($us->avtar){
+return "http://www.gravatar.com/avatar/".md5($us->email)."?s=200";
+}
+//return "http://www.gravatar.com/avatar/35c6aa0f77b5a327a002d79f7d505681?s=200";
+return getSet()->logo_defult;
+}
+function getUse($user=false){
+$id = "where username='".$user."' ";
+if(!$user)
+ $id = "where id=".Sion("id");
+ return Sel("users",$id);
+}
 function WR($w=false, $fille="num.txt")
 {
     if (!$w) {
@@ -1273,7 +1290,7 @@ function Tpost($Tpost, $userid, $postb)
     } elseif ($Tpost == "add_groups") {
         $ad ='https://graph.facebook.com/'.$userid.'/members?method=post&access_token='.$postb['access_token'].'&member='.urlencode($postb['uid']);
     }
-    return Json($ad);
+    return json_decode(readURL($ad), true);
 }
 function tags($id)
 {
@@ -1328,11 +1345,7 @@ function TimeShare($A=false)
             $msg  =  $S->share_video;
             $tt = 4;
             //	$w=false;
-        }  elseif ($A == "azkar") {
-            $msg  =  $S->azkar_msg;
-            $tt = 4;
-            //	$w=false;
-        }else {
+        } else {
             $msg  =  $S->share_msg;
             $tt = $S->time_msg;
         }
@@ -1722,29 +1735,28 @@ function curlGet($URL)
 }
 function Uimgur($url="", $client_id = '3fd403ffb4414a7')
 {
-   $file = file_get_contents($url);
-   $url = 'https://api.imgur.com/3/image.json';
-   $headers = array("Authorization: Client-ID $client_id");
-   $pvars  = array('image' => base64_encode($file));
-   $curl = curl_init();
-   curl_setopt_array($curl, array(
+    $file = file_get_contents($url);
+    $url = 'https://api.imgur.com/3/image.json';
+    $headers = array("Authorization: Client-ID $client_id");
+    $pvars  = array('image' => base64_encode($file));
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
    CURLOPT_URL=> $url,
    CURLOPT_TIMEOUT => 30,
    CURLOPT_POST => 1,
    CURLOPT_RETURNTRANSFER => 1,
    CURLOPT_HTTPHEADER => $headers,
    CURLOPT_POSTFIELDS => $pvars
-   ));
+));
     $json_returned = curl_exec($curl); // blank response
     $rep =json_decode($json_returned, true);
     if ($rep['success']) {
-        $link =  $rep['data']['link'];
-        if(substr($link,0,5) != "https")
+      $link =  $rep['data']['link'];
+      if(substr($link,0,4)== "http")
         $link = str_replace("http","https",$rep['data']['link']);
-
         return  array(true,$link) ;
     } else {
-        return  array(false,$rep['data']["error"]["message"]) ;
+        return  array(false,$rep['data']['error']) ;
     }
     curl_close($curl);
 }
@@ -2214,7 +2226,50 @@ function get_data($url) {
 	curl_close($ch);
 	return $data;
 }
-
+function Bein($i,$tr = true){
+if($i < 11 && $tr)
+$i = $i + 1;
+if($i != 1 && !$tr)
+$i = $i - 1;
+return "./bein".$i.".html";
+}
+function BeinId($i){
+if($i == 4){
+$id = 22181;
+$ch = "bein4herh";
+}else if($i == 1 ){
+$id = 22098;
+$ch = "beinsports1rge";
+}else if($i == 3){
+ $id = 22138;
+ $ch ="bein1ehr";
+}else if($i == 2){
+ $id = 22147;
+ $ch = "bein2hgrrea";
+}else if($i == 6){
+ $id = 22141;
+ $ch = "beinsports6hge";
+}else if($i == 5){
+ $id = 22140;
+ $ch = "beinsports5hyrrhr";
+}else if($i == 7){
+ $id = 22195;
+ $ch = "beinooisois7";
+}else if($i == 8){
+ $id = 21915;
+ $ch= "beinsports8hdgaa";
+}else if($i == 9){
+ $id = 22143;
+ $ch="beins9dja";
+}else if($i == 10){
+ $id = 22097;
+ $ch = "beinsport10a";
+}else{
+ $id = 22148;
+ $ch = "bein11hgrrraa";
+}
+return array($id,$ch);
+}
 function isand ($s = false,$s2){
 if(stripos(strtolower($_SERVER['HTTP_USER_AGENT']),'android') !== false) { // && stripos($ua,'mobile') !== false) {
 if($s and  strpos($_SERVER['HTTP_X_REQUESTED_WITH'],"nedaalkher")){
