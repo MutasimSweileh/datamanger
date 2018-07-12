@@ -14,10 +14,10 @@ mysqli_query($DBcon, "set character_set_server='utf8'");
 include "function.php";
 $Gapp = isv("app");
 if($Gapp == "login"){
-    $S = Sel('Client','where username="'.Cstr(isv("user")).'" and password="'.Cstr(isv("password")).'" and ( serial="" or serial="'.isv("serial").'" )  and  active=1 ');
+    $S = Sel('Client','where username="'.Cstr(isv("user")).'" and password="'.Cstr(isv("password")).'"  and  active=1 ');
     if(!$S->serial)
     UpDate("Client","serial",isv("serial"),"where id=".$S->id);
-    die(json_encode(array("data"=>$S))); 
+    die(json_encode(array("data"=>(($S && isv("serial") ==  $S->serial?$S:false))))); 
    
 }
 
