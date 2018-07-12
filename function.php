@@ -2209,7 +2209,7 @@ $MUr = $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 $ref=@$_SERVER['HTTP_REFERER'];
 $Froot= $_SERVER['DOCUMENT_ROOT'];
 if (!Ftable()) {
-    include "install.php";
+    //include "install.php";
 }
 if(strpos($PUr,"everysimply"))
 die("Coming Soon !!");
